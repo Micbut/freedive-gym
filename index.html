@@ -1572,5 +1572,14 @@
       Or use your browser menu to install as an app
     </div>
   </div>
+  <script>
+    // Hide immediately if running as installed app
+    if (window.matchMedia('(display-mode: standalone)').matches
+      || window.matchMedia('(display-mode: fullscreen)').matches
+      || window.matchMedia('(display-mode: minimal-ui)').matches
+      || navigator.standalone === true) {
+      document.getElementById('installFooter').style.display = 'none';
+    }
+  </script>
 </body>
 </html>
