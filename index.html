@@ -1566,7 +1566,11 @@
     });
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
+      // Force update any waiting service worker
+      navigator.serviceWorker.ready.then(reg => {
+        reg.update();
+      });
     }
   </script>
 
