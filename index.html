@@ -27,19 +27,22 @@
     .tabs {
       display: flex;
       justify-content: center;
-      gap: 0.5rem;
+      flex-wrap: wrap;
+      gap: 0.4rem;
       margin-bottom: 2rem;
+      padding: 0 0.25rem;
     }
     .tab-btn {
-      padding: 0.6rem 2rem;
+      padding: 0.5rem 1rem;
       border: 2px solid #334155;
       background: transparent;
       color: #94a3b8;
-      font-size: 1rem;
+      font-size: 0.85rem;
       font-weight: 600;
       border-radius: 8px;
       cursor: pointer;
       transition: all 0.2s;
+      white-space: nowrap;
     }
     .tab-btn.active {
       border-color: #38bdf8;
@@ -592,10 +595,53 @@
     .breathe-start-btn:hover { background: #7dd3fc; }
     .breathe-stop-btn { background: #f87171; color: #0f172a; display: none; }
     .breathe-stop-btn:hover { background: #fca5a5; }
+
+    /* Install banner */
+    .install-banner {
+      display: none;
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 0.8rem 1rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .install-banner.show { display: block; }
+    .install-banner p {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-bottom: 0.6rem;
+    }
+    .install-btn {
+      background: #38bdf8;
+      color: #0f172a;
+      border: none;
+      border-radius: 8px;
+      padding: 0.55rem 1.5rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .install-btn:hover { background: #7dd3fc; }
+    .install-dismiss {
+      background: transparent;
+      border: none;
+      color: #475569;
+      font-size: 0.75rem;
+      cursor: pointer;
+      margin-left: 0.8rem;
+    }
   </style>
 </head>
 <body>
   <h1>Freedive Gym</h1>
+
+  <div class="install-banner" id="installBanner">
+    <p>Install Freedive Gym for offline use</p>
+    <button class="install-btn" id="installBtn" onclick="installApp()">Install App</button>
+    <button class="install-dismiss" onclick="dismissInstall()">Not now</button>
+  </div>
 
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('co2')">CO2 Table</button>
@@ -1391,6 +1437,43 @@
     renderHistory();
     renderTestHistory();
     renderBreathePresets();
+
+    // --- PWA Install ---
+    let deferredPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('installBanner').classList.add('show');
+    });
+
+    function installApp() {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => {
+        deferredPrompt = null;
+        document.getElementById('installBanner').classList.remove('show');
+      });
+    }
+
+    function dismissInstall() {
+      document.getElementById('installBanner').classList.remove('show');
+    }
+
+    window.addEventListener('appinstalled', () => {
+      document.getElementById('installBanner').classList.remove('show');
+      deferredPrompt = null;
+    });
+
+    // Show iOS-specific hint if not installed
+    if (navigator.standalone === false || (window.matchMedia && window.matchMedia('(display-mode: browser)').matches && /iPhone|iPad/.test(navigator.userAgent))) {
+      const banner = document.getElementById('installBanner');
+      if (!deferredPrompt && !navigator.standalone) {
+        banner.querySelector('p').textContent = 'Tap Share then "Add to Home Screen" to install';
+        banner.querySelector('.install-btn').style.display = 'none';
+        banner.classList.add('show');
+      }
+    }
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');
