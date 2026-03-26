@@ -1518,6 +1518,7 @@
     const footerHint = document.getElementById('installFooterHint');
 
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const isMacSafari = !isIOS && /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
 
     if (!isStandalone) {
       // Chromium browsers (desktop + Android) — listen for install prompt
@@ -1527,14 +1528,34 @@
         footerBtn.innerHTML = isMobile
           ? '<span>&#x2913;</span> Install App'
           : '<span>&#x2913;</span> Install Desktop App';
+        footerBtn.style.display = '';
+        footerHint.innerHTML = '';
         footer.classList.add('show');
       });
 
-      // iOS — no beforeinstallprompt, show share instructions
+      // iOS Safari
       if (isIOS) {
         footerBtn.style.display = 'none';
         footerHint.innerHTML = 'Install as app: tap <strong>Share</strong> &#x2934; then <strong>Add to Home Screen</strong>';
         footer.classList.add('show');
+      }
+
+      // macOS Safari — no beforeinstallprompt support
+      if (isMacSafari) {
+        footerBtn.style.display = 'none';
+        footerHint.innerHTML = 'Install as app: menu <strong>File</strong> &#x2192; <strong>Add to Dock</strong>';
+        footer.classList.add('show');
+      }
+
+      // Fallback: if no beforeinstallprompt after 3s on desktop Chrome/Edge, show hint
+      if (!isIOS && !isMacSafari) {
+        setTimeout(() => {
+          if (!deferredPrompt && !isStandalone) {
+            footerBtn.style.display = 'none';
+            footerHint.innerHTML = 'Install as desktop app: click <strong>&#x22EE;</strong> menu &#x2192; <strong>Install Freedive Gym</strong>';
+            footer.classList.add('show');
+          }
+        }, 3000);
       }
     }
 
