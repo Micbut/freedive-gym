@@ -1517,18 +1517,23 @@
     const footerBtn = document.getElementById('installFooterBtn');
     const footerHint = document.getElementById('installFooterHint');
 
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
     if (!isStandalone) {
-      // Android / Chrome / Desktop — listen for install prompt
+      // Chromium browsers (desktop + Android) — listen for install prompt
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
+        footerBtn.innerHTML = isMobile
+          ? '<span>&#x2913;</span> Install App'
+          : '<span>&#x2913;</span> Install Desktop App';
         footer.classList.add('show');
       });
 
-      // iOS — show share instructions
+      // iOS — no beforeinstallprompt, show share instructions
       if (isIOS) {
         footerBtn.style.display = 'none';
-        footerHint.innerHTML = 'To install: tap <strong>Share</strong> &#x2934; then <strong>Add to Home Screen</strong>';
+        footerHint.innerHTML = 'Install as app: tap <strong>Share</strong> &#x2934; then <strong>Add to Home Screen</strong>';
         footer.classList.add('show');
       }
     }
