@@ -654,32 +654,40 @@
     .install-footer {
       display: none;
       text-align: center;
-      padding: 2rem 1rem 1rem;
-      margin-top: 2rem;
+      padding: 1.5rem 1rem;
+      margin-top: 1.5rem;
+      max-width: 520px;
+      margin-left: auto;
+      margin-right: auto;
     }
     .install-footer.show { display: block; }
     .install-footer-link {
-      background: transparent;
-      border: 1px solid #334155;
-      color: #64748b;
-      padding: 0.5rem 1.2rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid #38bdf8;
+      color: #38bdf8;
+      padding: 0.7rem 1.5rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.5rem;
+      width: 100%;
+      justify-content: center;
     }
     .install-footer-link:hover {
-      border-color: #38bdf8;
-      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.2);
     }
     .install-footer-hint {
-      color: #475569;
-      font-size: 0.75rem;
-      margin-top: 0.5rem;
-      line-height: 1.4;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 0.8rem 1rem;
+      color: #94a3b8;
+      font-size: 0.85rem;
+      line-height: 1.5;
     }
   </style>
 </head>
@@ -1519,27 +1527,28 @@
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     if (!isStandalone) {
-      // Show footer immediately with fallback text
-      footerBtn.style.display = 'none';
-      if (isIOS) {
-        footerHint.innerHTML = 'Install as app: tap <strong>Share</strong> then <strong>Add to Home Screen</strong>';
-      } else if (isMobile) {
-        footerHint.innerHTML = 'Install as app from your browser menu';
-      } else {
-        footerHint.innerHTML = 'Install as desktop app from your browser menu';
-      }
       footer.classList.add('show');
 
-      // Chromium: upgrade to a clickable install button when available
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        footerBtn.innerHTML = isMobile
-          ? '<span>&#x2913;</span> Install App'
-          : '<span>&#x2913;</span> Install Desktop App';
-        footerBtn.style.display = '';
-        footerHint.innerHTML = '';
-      });
+      if (isIOS) {
+        footerBtn.style.display = 'none';
+        footerHint.innerHTML = '&#x2913; Install as app: tap <strong>Share</strong> then <strong>Add to Home Screen</strong>';
+      } else {
+        // Show hint by default, upgrade to button if beforeinstallprompt fires
+        footerBtn.style.display = 'none';
+        footerHint.innerHTML = isMobile
+          ? '&#x2913; Install as app: open your <strong>browser menu</strong> and tap <strong>Install</strong> or <strong>Add to Home Screen</strong>'
+          : '&#x2913; Install as desktop app: open your <strong>browser menu</strong> and select <strong>Install Freedive Gym</strong>';
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+          e.preventDefault();
+          deferredPrompt = e;
+          footerBtn.innerHTML = isMobile
+            ? '<span>&#x2913;</span> Install App'
+            : '<span>&#x2913;</span> Install Desktop App';
+          footerBtn.style.display = '';
+          footerHint.style.display = 'none';
+        });
+      }
     }
 
     function installApp() {
