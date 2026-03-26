@@ -651,52 +651,41 @@
     .breathe-stop-btn { background: #f87171; color: #0f172a; display: none; }
     .breathe-stop-btn:hover { background: #fca5a5; }
 
-    /* Install banner */
-    .install-banner {
+    /* Install footer */
+    .install-footer {
       display: none;
-      background: linear-gradient(135deg, #1e293b, #0f172a);
-      border: 1px solid #334155;
-      border-radius: 10px;
-      padding: 0.8rem 1rem;
-      margin-bottom: 1.5rem;
       text-align: center;
+      padding: 2rem 1rem 1rem;
+      margin-top: 2rem;
     }
-    .install-banner.show { display: block; }
-    .install-banner p {
-      font-size: 0.85rem;
-      color: #94a3b8;
-      margin-bottom: 0.6rem;
-    }
-    .install-btn {
-      background: #38bdf8;
-      color: #0f172a;
-      border: none;
-      border-radius: 8px;
-      padding: 0.55rem 1.5rem;
-      font-size: 0.9rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .install-btn:hover { background: #7dd3fc; }
-    .install-dismiss {
+    .install-footer.show { display: block; }
+    .install-footer-link {
       background: transparent;
-      border: none;
+      border: 1px solid #334155;
+      color: #64748b;
+      padding: 0.5rem 1.2rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .install-footer-link:hover {
+      border-color: #38bdf8;
+      color: #38bdf8;
+    }
+    .install-footer-hint {
       color: #475569;
       font-size: 0.75rem;
-      cursor: pointer;
-      margin-left: 0.8rem;
+      margin-top: 0.5rem;
+      line-height: 1.4;
     }
   </style>
 </head>
 <body>
   <h1>Freedive Gym</h1>
-
-  <div class="install-banner" id="installBanner">
-    <p>Install Freedive Gym for offline use</p>
-    <button class="install-btn" id="installBtn" onclick="installApp()">Install App</button>
-    <button class="install-dismiss" onclick="dismissInstall()">Not now</button>
-  </div>
 
   <!-- Home Screen -->
   <div class="home" id="homeScreen">
@@ -1523,46 +1512,51 @@
     // --- PWA Install ---
     let deferredPrompt = null;
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const footer = document.getElementById('installFooter');
+    const footerBtn = document.getElementById('installFooterBtn');
+    const footerHint = document.getElementById('installFooterHint');
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      if (!isStandalone && isMobile) {
-        document.getElementById('installBanner').classList.add('show');
+    if (!isStandalone) {
+      // Android / Chrome / Desktop — listen for install prompt
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        footer.classList.add('show');
+      });
+
+      // iOS — show share instructions
+      if (isIOS) {
+        footerBtn.style.display = 'none';
+        footerHint.innerHTML = 'To install: tap <strong>Share</strong> &#x2934; then <strong>Add to Home Screen</strong>';
+        footer.classList.add('show');
       }
-    });
+    }
 
     function installApp() {
       if (!deferredPrompt) return;
       deferredPrompt.prompt();
       deferredPrompt.userChoice.then(() => {
         deferredPrompt = null;
-        document.getElementById('installBanner').classList.remove('show');
+        footer.classList.remove('show');
       });
     }
 
-    function dismissInstall() {
-      document.getElementById('installBanner').classList.remove('show');
-    }
-
     window.addEventListener('appinstalled', () => {
-      document.getElementById('installBanner').classList.remove('show');
+      footer.classList.remove('show');
       deferredPrompt = null;
     });
-
-    // iOS Safari: no beforeinstallprompt, show share hint instead
-    if (isIOS && !isStandalone && !deferredPrompt) {
-      const banner = document.getElementById('installBanner');
-      banner.querySelector('p').innerHTML = 'To install, tap <strong>Share</strong> &#x2934; then <strong>"Add to Home Screen"</strong>';
-      banner.querySelector('.install-btn').style.display = 'none';
-      banner.classList.add('show');
-    }
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');
     }
   </script>
+
+  <div class="install-footer" id="installFooter">
+    <button class="install-footer-link" id="installFooterBtn" onclick="installApp()">
+      <span>&#x2913;</span> Install Freedive Gym
+    </button>
+    <div class="install-footer-hint" id="installFooterHint"></div>
+  </div>
 </body>
 </html>
