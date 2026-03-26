@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Freedive Gym</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 2rem;
+      color: #38bdf8;
+    }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+    }
+    .tab-btn {
+      padding: 0.6rem 2rem;
+      border: 2px solid #334155;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      border-color: #38bdf8;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+    }
+    .tab-btn:hover { border-color: #38bdf8; }
+    .container {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-bottom: 0.3rem;
+      font-weight: 500;
+    }
+    .time-input {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .time-input input {
+      width: 70px;
+    }
+    .time-input span {
+      color: #64748b;
+      font-size: 0.85rem;
+    }
+    input[type="number"] {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      padding: 0.5rem 0.7rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="number"]:focus {
+      border-color: #38bdf8;
+    }
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .generate-btn, .start-btn, .stop-btn, .pause-btn, .resume-btn {
+      padding: 0.75rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .generate-btn {
+      flex: 1;
+      background: #38bdf8;
+      color: #0f172a;
+    }
+    .generate-btn:hover { background: #7dd3fc; }
+    .start-btn {
+      flex: 1;
+      background: #4ade80;
+      color: #0f172a;
+    }
+    .start-btn:hover { background: #86efac; }
+    .stop-btn {
+      flex: 1;
+      background: #f87171;
+      color: #0f172a;
+      display: none;
+    }
+    .stop-btn:hover { background: #fca5a5; }
+    .pause-btn {
+      flex: 1;
+      background: #fbbf24;
+      color: #0f172a;
+      display: none;
+    }
+    .pause-btn:hover { background: #fcd34d; }
+    .resume-btn {
+      flex: 1;
+      background: #4ade80;
+      color: #0f172a;
+      display: none;
+    }
+    .resume-btn:hover { background: #86efac; }
+    .table-container {
+      margin-top: 2rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    thead th {
+      background: #1e293b;
+      padding: 0.7rem;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      text-align: center;
+      font-weight: 600;
+    }
+    tbody td {
+      padding: 0.6rem 0.7rem;
+      text-align: center;
+      font-size: 1rem;
+      border-bottom: 1px solid #1e293b;
+    }
+    tr.rest td { color: #4ade80; }
+    tr.apnea td { color: #f87171; }
+    tr.done td { opacity: 0.35; }
+    tr.active-row td {
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    tr.active-row.rest td { background: rgba(74, 222, 128, 0.1); }
+    tr.active-row.apnea td { background: rgba(248, 113, 113, 0.1); }
+    .total {
+      text-align: center;
+      margin-top: 1rem;
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+    .total strong { color: #e2e8f0; }
+    .description {
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-right: 0.3rem;
+    }
+    .badge-rest { background: rgba(74, 222, 128, 0.15); color: #4ade80; }
+    .badge-apnea { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+    .badge-fixed { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+    .badge-change { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+
+    /* Timer overlay */
+    .timer-display {
+      display: none;
+      text-align: center;
+      margin-top: 1.5rem;
+      padding: 1.5rem;
+      border-radius: 12px;
+      background: #1e293b;
+    }
+    .timer-display.active { display: block; }
+    .timer-phase {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .timer-phase.rest { color: #4ade80; }
+    .timer-phase.apnea { color: #f87171; }
+    .timer-countdown {
+      font-size: 4.5rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .timer-countdown.rest { color: #4ade80; }
+    .timer-countdown.apnea { color: #f87171; }
+    .timer-set {
+      font-size: 0.9rem;
+      color: #64748b;
+      margin-top: 0.3rem;
+    }
+    .timer-progress {
+      width: 100%;
+      height: 6px;
+      background: #334155;
+      border-radius: 3px;
+      margin-top: 1rem;
+      overflow: hidden;
+    }
+    .timer-progress-bar {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s linear;
+    }
+    .timer-progress-bar.rest { background: #4ade80; }
+    .timer-progress-bar.apnea { background: #f87171; }
+    .timer-done {
+      display: none;
+      text-align: center;
+      margin-top: 1.5rem;
+      padding: 2rem 1.5rem;
+      border-radius: 12px;
+      background: #1e293b;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #4ade80;
+    }
+
+    /* History / Progress */
+    .history-section {
+      margin-top: 2.5rem;
+      border-top: 1px solid #1e293b;
+      padding-top: 1.5rem;
+    }
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .history-header h2 {
+      font-size: 1.1rem;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .clear-btn {
+      background: transparent;
+      border: 1px solid #334155;
+      color: #64748b;
+      padding: 0.3rem 0.7rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .clear-btn:hover { border-color: #f87171; color: #f87171; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.6rem;
+      margin-bottom: 1.2rem;
+    }
+    .stat-card-wide {
+      grid-column: span 2;
+    }
+    .stats-type-header {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.6rem 0 0.2rem;
+      grid-column: span 2;
+    }
+    .stats-type-header.co2 { color: #f87171; }
+    .stats-type-header.o2 { color: #38bdf8; }
+    .stats-type-header.test { color: #facc15; }
+    .stat-card {
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 0.8rem;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+    .stat-label {
+      font-size: 0.7rem;
+      color: #64748b;
+      margin-top: 0.2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .history-item {
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 0.7rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+    }
+    .history-item-left {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .history-type {
+      font-weight: 700;
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+    }
+    .history-type.co2 { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+    .history-type.o2 { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+    .history-type.test { background: rgba(250, 204, 21, 0.15); color: #facc15; }
+    .history-date { color: #94a3b8; }
+    .history-detail { color: #64748b; font-size: 0.8rem; }
+    .history-right { text-align: right; }
+    .history-duration { color: #e2e8f0; font-weight: 600; }
+    .history-sets { color: #64748b; font-size: 0.75rem; }
+    .history-empty {
+      text-align: center;
+      color: #475569;
+      font-size: 0.85rem;
+      padding: 1.5rem;
+    }
+    .streak-bar {
+      display: flex;
+      gap: 3px;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .streak-day {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      background: #1e293b;
+    }
+    .streak-day.active { background: #4ade80; }
+    .streak-day.today { outline: 2px solid #38bdf8; outline-offset: 1px; }
+    .streak-label {
+      text-align: center;
+      font-size: 0.7rem;
+      color: #475569;
+      margin-bottom: 0.8rem;
+    }
+
+    /* Test section */
+    .test-section { display: none; }
+    .test-section.active { display: block; }
+    .test-stopwatch {
+      text-align: center;
+      padding: 2rem 1rem;
+      background: #1e293b;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+    }
+    .test-time {
+      font-size: 5rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: #e2e8f0;
+      line-height: 1.1;
+    }
+    .test-time.running { color: #f87171; }
+    .test-ms {
+      font-size: 2rem;
+      color: #64748b;
+    }
+    .test-hint {
+      color: #64748b;
+      font-size: 0.85rem;
+      margin-top: 0.8rem;
+    }
+    .test-btn {
+      width: 100%;
+      padding: 1rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 0.5rem;
+    }
+    .test-start-btn {
+      background: #f87171;
+      color: #0f172a;
+    }
+    .test-start-btn:hover { background: #fca5a5; }
+    .test-stop-btn {
+      background: #4ade80;
+      color: #0f172a;
+    }
+    .test-stop-btn:hover { background: #86efac; }
+    .test-result {
+      display: none;
+      text-align: center;
+      padding: 1.5rem;
+      background: #1e293b;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+    }
+    .test-result-time {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+    .test-result-label {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-bottom: 0.3rem;
+    }
+    .test-result-comparison {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-top: 0.5rem;
+    }
+    .test-result-comparison .positive { color: #4ade80; }
+    .test-result-comparison .negative { color: #f87171; }
+    .test-pb {
+      display: inline-block;
+      background: rgba(250, 204, 21, 0.15);
+      color: #facc15;
+      font-weight: 700;
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      margin-top: 0.4rem;
+    }
+    .test-history {
+      margin-top: 1rem;
+    }
+    .test-history-title {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 0.5rem;
+    }
+    .test-history-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .test-history-item {
+      background: #1e293b;
+      border-radius: 6px;
+      padding: 0.4rem 0.7rem;
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+    .test-history-item.best {
+      border: 1px solid rgba(250, 204, 21, 0.3);
+      color: #facc15;
+    }
+
+    /* Breathing section */
+    .breathe-section { display: none; }
+    .breathe-section.active { display: block; }
+    .breathe-presets {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .breathe-preset {
+      background: #1e293b;
+      border: 2px solid #334155;
+      border-radius: 8px;
+      padding: 0.8rem 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+      color: #e2e8f0;
+    }
+    .breathe-preset:hover { border-color: #38bdf8; }
+    .breathe-preset.selected { border-color: #38bdf8; background: rgba(56, 189, 248, 0.08); }
+    .breathe-preset-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 0.2rem;
+    }
+    .breathe-preset-desc {
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+    .breathe-preset-pattern {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-top: 0.2rem;
+    }
+    .breathe-settings {
+      margin-bottom: 1rem;
+    }
+    .breathe-visual {
+      display: none;
+      text-align: center;
+      padding: 2rem 1rem;
+      background: #1e293b;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+    .breathe-visual.active { display: block; }
+    .breathe-circle-wrap {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      margin: 0 auto 1rem;
+    }
+    .breathe-circle {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: rgba(56, 189, 248, 0.15);
+      border: 3px solid #38bdf8;
+      transition: transform 0.5s ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .breathe-circle.inhale { transform: scale(1); border-color: #38bdf8; background: rgba(56, 189, 248, 0.15); }
+    .breathe-circle.exhale { transform: scale(0.6); border-color: #a78bfa; background: rgba(167, 139, 250, 0.1); }
+    .breathe-circle.hold-in { transform: scale(1); border-color: #4ade80; background: rgba(74, 222, 128, 0.1); }
+    .breathe-circle.hold-out { transform: scale(0.6); border-color: #fb923c; background: rgba(251, 146, 60, 0.1); }
+    .breathe-circle-text {
+      font-size: 1.3rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .breathe-circle.inhale .breathe-circle-text { color: #38bdf8; }
+    .breathe-circle.exhale .breathe-circle-text { color: #a78bfa; }
+    .breathe-circle.hold-in .breathe-circle-text { color: #4ade80; }
+    .breathe-circle.hold-out .breathe-circle-text { color: #fb923c; }
+    .breathe-timer {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      font-variant-numeric: tabular-nums;
+    }
+    .breathe-round {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-top: 0.3rem;
+    }
+    .breathe-btn {
+      width: 100%;
+      padding: 0.85rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .breathe-start-btn { background: #38bdf8; color: #0f172a; }
+    .breathe-start-btn:hover { background: #7dd3fc; }
+    .breathe-stop-btn { background: #f87171; color: #0f172a; display: none; }
+    .breathe-stop-btn:hover { background: #fca5a5; }
+  </style>
+</head>
+<body>
+  <h1>Freedive Gym</h1>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('co2')">CO2 Table</button>
+    <button class="tab-btn" onclick="switchTab('o2')">O2 Table</button>
+    <button class="tab-btn" onclick="switchTab('test')">Static Apnea</button>
+    <button class="tab-btn" onclick="switchTab('breathe')">Breathing</button>
+  </div>
+
+  <div class="container">
+    <div class="description" id="desc"></div>
+
+    <!-- Test Section -->
+    <div class="test-section" id="testSection">
+      <div class="test-stopwatch" id="testStopwatch">
+        <div class="test-time" id="testTime">0:00<span class="test-ms">.0</span></div>
+        <div class="test-hint" id="testHint">Take a deep breath and tap start when ready</div>
+      </div>
+      <button class="test-btn test-start-btn" id="testStartBtn" onclick="startTest()">Start Hold</button>
+      <button class="test-btn test-stop-btn" id="testStopBtn" onclick="stopTest()" style="display:none">Stop</button>
+      <div class="test-result" id="testResult">
+        <div class="test-result-label">Your time</div>
+        <div class="test-result-time" id="testResultTime">0:00</div>
+        <div id="testPbBadge"></div>
+        <div class="test-result-comparison" id="testComparison"></div>
+      </div>
+      <div class="test-history" id="testHistoryContainer"></div>
+    </div>
+
+    <!-- Breathing Section -->
+    <div class="breathe-section" id="breatheSection">
+      <div class="breathe-presets" id="breathePresets"></div>
+      <div class="breathe-settings">
+        <div class="form-group">
+          <label>Rounds</label>
+          <input type="number" id="breatheRounds" value="5" min="1" max="30">
+        </div>
+      </div>
+      <button class="breathe-btn breathe-start-btn" id="breatheStartBtn" onclick="startBreathe()">Start</button>
+      <button class="breathe-btn breathe-stop-btn" id="breatheStopBtn" onclick="stopBreathe()">Stop</button>
+      <div class="breathe-visual" id="breatheVisual">
+        <div class="breathe-circle-wrap">
+          <div class="breathe-circle inhale" id="breatheCircle">
+            <span class="breathe-circle-text" id="breathePhaseText">Inhale</span>
+          </div>
+        </div>
+        <div class="breathe-timer" id="breatheCountdown">4</div>
+        <div class="breathe-round" id="breatheRound">Round 1 / 5</div>
+      </div>
+    </div>
+
+    <div id="settings">
+      <div class="form-group">
+        <label>Number of sets</label>
+        <input type="number" id="sets" value="8" min="1" max="20">
+      </div>
+
+      <div class="form-group">
+        <label id="restLabel">Starting rest</label>
+        <div class="time-input">
+          <input type="number" id="restMin" value="2" min="0" max="30"> <span>min</span>
+          <input type="number" id="restSec" value="0" min="0" max="59"> <span>sec</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label id="apneaLabel">Apnea hold</label>
+        <div class="time-input">
+          <input type="number" id="apneaMin" value="2" min="0" max="30"> <span>min</span>
+          <input type="number" id="apneaSec" value="0" min="0" max="59"> <span>sec</span>
+        </div>
+      </div>
+
+      <div class="form-group" id="changeGroup">
+        <label id="changeLabel">Rest decrease per set</label>
+        <div class="time-input">
+          <input type="number" id="changeMin" value="0" min="0" max="10"> <span>min</span>
+          <input type="number" id="changeSec" value="15" min="0" max="59"> <span>sec</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="generate-btn" id="genBtn" onclick="generate()">Generate Table</button>
+      <button class="start-btn" id="startBtn" onclick="startTimer()">Start</button>
+      <button class="pause-btn" id="pauseBtn" onclick="pauseTimer()">Pause</button>
+      <button class="resume-btn" id="resumeBtn" onclick="resumeTimer()">Resume</button>
+      <button class="stop-btn" id="stopBtn" onclick="stopTimer()">Stop</button>
+    </div>
+
+    <div class="timer-display" id="timerDisplay">
+      <div class="timer-phase" id="timerPhase">Breathe</div>
+      <div class="timer-countdown" id="timerCountdown">0:00</div>
+      <div class="timer-set" id="timerSet">Set 1 / 8</div>
+      <div class="timer-progress">
+        <div class="timer-progress-bar" id="timerBar"></div>
+      </div>
+    </div>
+
+    <div class="timer-done" id="timerDone">Session complete!</div>
+
+    <div class="table-container" id="output"></div>
+
+    <!-- History Section -->
+    <div class="history-section" id="historySection">
+      <div class="history-header">
+        <h2>Progress</h2>
+        <button class="clear-btn" onclick="clearHistory()">Clear</button>
+      </div>
+      <div id="streakContainer"></div>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+  </div>
+
+  <script>
+    let mode = 'co2';
+    let tableRows = [];
+    let timerInterval = null;
+    let currentRowIdx = 0;
+    let remaining = 0;
+    let phaseDuration = 0;
+    let audioCtx = null;
+    let sessionStartTime = null;
+    let paused = false;
+    let pausedElapsed = 0;
+    let testInterval = null;
+    let testStartTime = null;
+
+    // --- LocalStorage History ---
+    function getHistory() {
+      try {
+        return JSON.parse(localStorage.getItem('apnea_history') || '[]');
+      } catch { return []; }
+    }
+
+    function saveSession(entry) {
+      const history = getHistory();
+      history.unshift(entry);
+      localStorage.setItem('apnea_history', JSON.stringify(history));
+    }
+
+    function clearHistory() {
+      if (confirm('Clear all session history?')) {
+        localStorage.removeItem('apnea_history');
+        renderHistory();
+      }
+    }
+
+    function buildEmptyStreak() {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      let html = '<div class="streak-bar">';
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        html += `<div class="streak-day${i === 0 ? ' today' : ''}" title="${d.toLocaleDateString()}"></div>`;
+      }
+      return html + '</div><div class="streak-label">Last 14 days</div>';
+    }
+
+    function buildEmptyStats() {
+      return `
+        <div class="stats-type-header co2">CO2 Table</div>
+        <div class="stat-card"><div class="stat-value" style="opacity:0.3">0</div><div class="stat-label">Sessions</div></div>
+        <div class="stat-card"><div class="stat-value" style="opacity:0.3">0:00</div><div class="stat-label">Total Hold</div></div>
+        <div class="stats-type-header o2">O2 Table</div>
+        <div class="stat-card"><div class="stat-value" style="opacity:0.3">0</div><div class="stat-label">Sessions</div></div>
+        <div class="stat-card"><div class="stat-value" style="opacity:0.3">0:00</div><div class="stat-label">Total Hold</div></div>
+        <div class="stats-type-header test">Static Apnea</div>
+        <div class="stat-card"><div class="stat-value" style="opacity:0.3">0</div><div class="stat-label">Tests</div></div>
+        <div class="stat-card"><div class="stat-value" style="opacity:0.3">0:00</div><div class="stat-label">Best</div></div>
+      `;
+    }
+
+    function buildTypeStats(label, cssClass, items, isTest) {
+      const count = items.length;
+      let html = `<div class="stats-type-header ${cssClass}">${label}</div>`;
+      if (count === 0) {
+        html += `<div class="stat-card"><div class="stat-value" style="opacity:0.3">0</div><div class="stat-label">${isTest ? 'Tests' : 'Sessions'}</div></div>`;
+        html += `<div class="stat-card"><div class="stat-value" style="opacity:0.3">0:00</div><div class="stat-label">${isTest ? 'Best' : 'Total Hold'}</div></div>`;
+      } else if (isTest) {
+        const best = Math.max(...items.map(h => h.maxApnea));
+        html += `<div class="stat-card"><div class="stat-value">${count}</div><div class="stat-label">Tests</div></div>`;
+        html += `<div class="stat-card"><div class="stat-value">${fmt(best)}</div><div class="stat-label">Best</div></div>`;
+      } else {
+        const totalHold = items.reduce((s, h) => s + h.totalHoldTime, 0);
+        html += `<div class="stat-card"><div class="stat-value">${count}</div><div class="stat-label">Sessions</div></div>`;
+        html += `<div class="stat-card"><div class="stat-value">${fmt(totalHold)}</div><div class="stat-label">Total Hold</div></div>`;
+      }
+      return html;
+    }
+
+    function buildStats(history) {
+      const co2 = history.filter(h => h.type === 'co2');
+      const o2 = history.filter(h => h.type === 'o2');
+      const tests = history.filter(h => h.type === 'test');
+      return buildTypeStats('CO2 Table', 'co2', co2, false)
+           + buildTypeStats('O2 Table', 'o2', o2, false)
+           + buildTypeStats('Static Apnea', 'test', tests, true);
+    }
+
+    function renderHistory() {
+      const history = getHistory();
+      const list = document.getElementById('historyList');
+      const stats = document.getElementById('statsGrid');
+      const streakContainer = document.getElementById('streakContainer');
+
+      if (history.length === 0) {
+        stats.innerHTML = buildEmptyStats();
+        streakContainer.innerHTML = buildEmptyStreak();
+        list.innerHTML = '<div class="history-empty">Complete your first session to start tracking progress here.<br>Your streak, stats, and session history will appear automatically.</div>';
+        return;
+      }
+
+      stats.innerHTML = buildStats(history);
+
+      // Streak (last 14 days)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const daysWithSessions = new Set(
+        history.map(h => {
+          const d = new Date(h.date);
+          d.setHours(0, 0, 0, 0);
+          return d.getTime();
+        })
+      );
+
+      let streakHtml = '<div class="streak-bar">';
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const isActive = daysWithSessions.has(d.getTime());
+        const isToday = i === 0;
+        let cls = 'streak-day';
+        if (isActive) cls += ' active';
+        if (isToday) cls += ' today';
+        streakHtml += `<div class="${cls}" title="${d.toLocaleDateString()}"></div>`;
+      }
+      streakHtml += '</div>';
+
+      // Current streak count
+      let streak = 0;
+      for (let i = 0; i <= 365; i++) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        if (daysWithSessions.has(d.getTime())) {
+          streak++;
+        } else if (i > 0) {
+          break;
+        }
+      }
+
+      streakHtml += `<div class="streak-label">Last 14 days${streak > 0 ? ' &middot; ' + streak + ' day streak' : ''}</div>`;
+      streakContainer.innerHTML = streakHtml;
+
+      // Session list (last 10)
+      const recent = history.slice(0, 10);
+      list.innerHTML = recent.map(h => {
+        const d = new Date(h.date);
+        const dateStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        const timeStr = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        return `
+          <div class="history-item">
+            <div class="history-item-left">
+              <span class="history-type ${h.type}">${h.type.toUpperCase()}</span>
+              <div>
+                <div class="history-date">${dateStr} ${timeStr}</div>
+                <div class="history-detail">${h.type === 'test' ? 'hold ' + fmt(h.maxApnea) : h.sets + ' sets &middot; max hold ' + fmt(h.maxApnea)}</div>
+              </div>
+            </div>
+            <div class="history-right">
+              <div class="history-duration">${fmt(h.totalTime)}</div>
+              <div class="history-sets">${h.completed ? 'Completed' : 'Stopped early'}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- Audio ---
+    function getAudioCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    function beep(freq, duration, count) {
+      const ctx = getAudioCtx();
+      for (let i = 0; i < count; i++) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        gain.gain.value = 0.3;
+        const start = ctx.currentTime + i * 0.3;
+        osc.start(start);
+        osc.stop(start + duration);
+      }
+    }
+
+    // --- Test (max hold) ---
+    function getTestHistory() {
+      try { return JSON.parse(localStorage.getItem('apnea_tests') || '[]'); }
+      catch { return []; }
+    }
+
+    function renderTestHistory() {
+      const tests = getTestHistory();
+      const container = document.getElementById('testHistoryContainer');
+      if (tests.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+      const best = Math.max(...tests.map(t => t.seconds));
+      let html = '<div class="test-history-title">Previous tests</div><div class="test-history-list">';
+      tests.slice(0, 12).forEach(t => {
+        const d = new Date(t.date);
+        const dateStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        const isBest = t.seconds === best;
+        html += `<div class="test-history-item${isBest ? ' best' : ''}">${dateStr} &mdash; ${fmtTest(t.seconds)}</div>`;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    function fmtTest(totalSeconds) {
+      const m = Math.floor(totalSeconds / 60);
+      const s = Math.floor(totalSeconds % 60);
+      const ds = Math.floor((totalSeconds % 1) * 10);
+      return m + ':' + String(s).padStart(2, '0') + '.' + ds;
+    }
+
+    function startTest() {
+      if (testInterval) return;
+      testStartTime = Date.now();
+      document.getElementById('testStartBtn').style.display = 'none';
+      document.getElementById('testStopBtn').style.display = 'block';
+      document.getElementById('testResult').style.display = 'none';
+      document.getElementById('testHint').textContent = 'Hold your breath...';
+      document.getElementById('testTime').classList.add('running');
+      beep(660, 0.15, 1);
+
+      testInterval = setInterval(() => {
+        const elapsed = (Date.now() - testStartTime) / 1000;
+        document.getElementById('testTime').innerHTML = fmtHtml(elapsed);
+      }, 100);
+    }
+
+    function fmtHtml(totalSeconds) {
+      const m = Math.floor(totalSeconds / 60);
+      const s = Math.floor(totalSeconds % 60);
+      const ds = Math.floor((totalSeconds % 1) * 10);
+      return m + ':' + String(s).padStart(2, '0') + '<span class="test-ms">.' + ds + '</span>';
+    }
+
+    function stopTest() {
+      if (!testInterval) return;
+      clearInterval(testInterval);
+      testInterval = null;
+      const elapsed = (Date.now() - testStartTime) / 1000;
+      beep(880, 0.2, 2);
+
+      document.getElementById('testStopBtn').style.display = 'none';
+      document.getElementById('testStartBtn').style.display = 'block';
+      document.getElementById('testTime').classList.remove('running');
+      document.getElementById('testTime').innerHTML = fmtHtml(elapsed);
+      document.getElementById('testHint').textContent = 'Take a deep breath and tap start when ready';
+
+      // Save test
+      const tests = getTestHistory();
+      const prevBest = tests.length > 0 ? Math.max(...tests.map(t => t.seconds)) : 0;
+      const isPB = elapsed > prevBest && tests.length > 0;
+      const isFirst = tests.length === 0;
+
+      tests.unshift({ date: new Date().toISOString(), seconds: elapsed });
+      localStorage.setItem('apnea_tests', JSON.stringify(tests));
+
+      // Also save to main history
+      saveSession({
+        date: new Date().toISOString(),
+        type: 'test',
+        sets: 1,
+        totalSets: 1,
+        totalTime: Math.round(elapsed),
+        totalHoldTime: Math.round(elapsed),
+        maxApnea: Math.round(elapsed),
+        completed: true
+      });
+
+      // Show result
+      document.getElementById('testResultTime').textContent = fmtTest(elapsed);
+      const pbBadge = document.getElementById('testPbBadge');
+      pbBadge.innerHTML = isPB ? '<span class="test-pb">New Personal Best!</span>' : '';
+
+      const comp = document.getElementById('testComparison');
+      if (!isFirst && prevBest > 0) {
+        const diff = elapsed - prevBest;
+        if (diff > 0) {
+          comp.innerHTML = `<span class="positive">+${fmtTest(diff)}</span> vs previous best (${fmtTest(prevBest)})`;
+        } else {
+          comp.innerHTML = `<span class="negative">${fmtTest(Math.abs(diff))}</span> below best (${fmtTest(prevBest)})`;
+        }
+      } else {
+        comp.innerHTML = 'First test recorded!';
+      }
+
+      document.getElementById('testResult').style.display = 'block';
+      renderTestHistory();
+      renderHistory();
+    }
+
+    // --- Tab / Labels ---
+    function switchTab(m) {
+      if (timerInterval || testInterval || breatheInterval || paused) return;
+      mode = m;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => {
+        const tabModes = ['co2', 'o2', 'test', 'breathe'];
+        b.classList.toggle('active', tabModes[i] === m);
+      });
+
+      // Show/hide sections
+      const isTest = m === 'test';
+      const isBreathe = m === 'breathe';
+      const isTable = !isTest && !isBreathe;
+      document.getElementById('testSection').classList.toggle('active', isTest);
+      document.getElementById('breatheSection').classList.toggle('active', isBreathe);
+      document.getElementById('settings').style.display = isTable ? 'block' : 'none';
+      document.getElementById('desc').style.display = isTable ? 'block' : 'none';
+      document.querySelector('.btn-row').style.display = isTable ? 'flex' : 'none';
+      document.getElementById('output').style.display = isTable ? 'block' : 'none';
+
+      if (isTest) {
+        renderTestHistory();
+      } else if (isBreathe) {
+        renderBreathePresets();
+      } else {
+        updateLabels();
+        generate();
+      }
+    }
+
+    function updateLabels() {
+      const desc = document.getElementById('desc');
+      const changeLabel = document.getElementById('changeLabel');
+      if (mode === 'co2') {
+        desc.innerHTML = '<span class="badge badge-apnea">Apnea</span><span class="badge badge-fixed">fixed</span> <span class="badge badge-rest">Rest</span><span class="badge badge-change">decreases</span><br>Trains your tolerance to rising CO2 by shortening recovery between holds.';
+        changeLabel.textContent = 'Rest decrease per set';
+        document.getElementById('restLabel').textContent = 'Starting rest';
+        document.getElementById('apneaLabel').textContent = 'Apnea hold (fixed)';
+      } else {
+        desc.innerHTML = '<span class="badge badge-rest">Rest</span><span class="badge badge-fixed">fixed</span> <span class="badge badge-apnea">Apnea</span><span class="badge badge-change">increases</span><br>Trains your tolerance to low O2 by progressively lengthening holds with full recovery.';
+        changeLabel.textContent = 'Apnea increase per set';
+        document.getElementById('restLabel').textContent = 'Rest (fixed)';
+        document.getElementById('apneaLabel').textContent = 'Starting apnea hold';
+      }
+    }
+
+    function fmt(seconds) {
+      if (seconds < 0) seconds = 0;
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return m + ':' + String(s).padStart(2, '0');
+    }
+
+    function buildRows() {
+      const sets = parseInt(document.getElementById('sets').value) || 8;
+      const restBase = (parseInt(document.getElementById('restMin').value) || 0) * 60 + (parseInt(document.getElementById('restSec').value) || 0);
+      const apneaBase = (parseInt(document.getElementById('apneaMin').value) || 0) * 60 + (parseInt(document.getElementById('apneaSec').value) || 0);
+      const change = (parseInt(document.getElementById('changeMin').value) || 0) * 60 + (parseInt(document.getElementById('changeSec').value) || 0);
+
+      let rows = [];
+      for (let i = 0; i < sets; i++) {
+        let rest, apnea;
+        if (mode === 'co2') {
+          rest = Math.max(0, restBase - change * i);
+          apnea = apneaBase;
+        } else {
+          rest = restBase;
+          apnea = apneaBase + change * i;
+        }
+        rows.push({ type: 'rest', duration: rest, set: i + 1 });
+        rows.push({ type: 'apnea', duration: apnea, set: i + 1 });
+      }
+      return rows;
+    }
+
+    function renderTable(activeIdx) {
+      let totalTime = 0;
+      let html = '<table><thead><tr><th>#</th><th>Phase</th><th>Duration</th></tr></thead><tbody>';
+      for (let i = 0; i < tableRows.length; i++) {
+        const r = tableRows[i];
+        totalTime += r.duration;
+        let cls = r.type;
+        if (activeIdx !== undefined) {
+          if (i < activeIdx) cls += ' done';
+          if (i === activeIdx) cls += ' active-row';
+        }
+        const label = r.type === 'rest' ? 'Breathe' : 'Hold';
+        const durText = (activeIdx !== undefined && i === activeIdx) ? fmt(remaining) : fmt(r.duration);
+        html += `<tr class="${cls}" id="row-${i}"><td>${i + 1}</td><td>${label}</td><td>${durText}</td></tr>`;
+      }
+      html += '</tbody></table>';
+      html += `<div class="total">Total time: <strong>${fmt(totalTime)}</strong></div>`;
+      document.getElementById('output').innerHTML = html;
+    }
+
+    function generate() {
+      tableRows = buildRows();
+      renderTable();
+    }
+
+    function updateTimerDisplay() {
+      const row = tableRows[currentRowIdx];
+      const phase = document.getElementById('timerPhase');
+      const countdown = document.getElementById('timerCountdown');
+      const setInfo = document.getElementById('timerSet');
+      const bar = document.getElementById('timerBar');
+
+      const isRest = row.type === 'rest';
+      const cls = isRest ? 'rest' : 'apnea';
+
+      phase.textContent = isRest ? 'Breathe' : 'Hold';
+      phase.className = 'timer-phase ' + cls;
+      countdown.textContent = fmt(remaining);
+      countdown.className = 'timer-countdown ' + cls;
+
+      const totalSets = tableRows.length / 2;
+      setInfo.textContent = `Set ${row.set} / ${totalSets}`;
+
+      const pct = phaseDuration > 0 ? ((phaseDuration - remaining) / phaseDuration) * 100 : 0;
+      bar.style.width = pct + '%';
+      bar.className = 'timer-progress-bar ' + cls;
+    }
+
+    function buildSessionEntry(completed) {
+      const completedSets = Math.ceil((currentRowIdx + (completed ? 1 : 0)) / 2);
+      const totalSets = tableRows.length / 2;
+      const apneaRows = tableRows.filter((r, i) => r.type === 'apnea' && i < (completed ? tableRows.length : currentRowIdx));
+      const totalHoldTime = apneaRows.reduce((sum, r) => sum + r.duration, 0);
+      const maxApnea = apneaRows.length > 0 ? Math.max(...apneaRows.map(r => r.duration)) : 0;
+      const elapsed = Math.round((pausedElapsed + (Date.now() - sessionStartTime)) / 1000);
+
+      return {
+        date: new Date().toISOString(),
+        type: mode,
+        sets: completed ? totalSets : completedSets,
+        totalSets: totalSets,
+        totalTime: elapsed,
+        totalHoldTime: totalHoldTime,
+        maxApnea: maxApnea,
+        completed: completed
+      };
+    }
+
+    function runTimerTick() {
+      remaining--;
+
+      if (remaining <= 3 && remaining > 0) {
+        beep(440, 0.1, 1);
+      }
+
+      if (remaining <= 0) {
+        currentRowIdx++;
+        if (currentRowIdx >= tableRows.length) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+          beep(880, 0.2, 3);
+          finishTimer(true);
+          return;
+        }
+        remaining = tableRows[currentRowIdx].duration;
+        phaseDuration = tableRows[currentRowIdx].duration;
+        beep(660, 0.15, 2);
+      }
+
+      updateTimerDisplay();
+      renderTable(currentRowIdx);
+    }
+
+    function showRunningUI() {
+      document.getElementById('startBtn').style.display = 'none';
+      document.getElementById('genBtn').style.display = 'none';
+      document.getElementById('pauseBtn').style.display = 'block';
+      document.getElementById('resumeBtn').style.display = 'none';
+      document.getElementById('stopBtn').style.display = 'block';
+      document.getElementById('settings').style.display = 'none';
+      document.getElementById('timerDisplay').classList.add('active');
+      document.getElementById('timerDone').style.display = 'none';
+      document.getElementById('historySection').style.display = 'none';
+    }
+
+    function startTimer() {
+      if (timerInterval) return;
+
+      tableRows = buildRows();
+      currentRowIdx = 0;
+      remaining = tableRows[0].duration;
+      phaseDuration = tableRows[0].duration;
+      sessionStartTime = Date.now();
+      pausedElapsed = 0;
+      paused = false;
+
+      showRunningUI();
+      beep(660, 0.15, 1);
+      updateTimerDisplay();
+      renderTable(currentRowIdx);
+
+      timerInterval = setInterval(runTimerTick, 1000);
+    }
+
+    function pauseTimer() {
+      if (!timerInterval) return;
+      clearInterval(timerInterval);
+      timerInterval = null;
+      paused = true;
+      pausedElapsed += Date.now() - sessionStartTime;
+
+      document.getElementById('pauseBtn').style.display = 'none';
+      document.getElementById('resumeBtn').style.display = 'block';
+    }
+
+    function resumeTimer() {
+      if (timerInterval || !paused) return;
+      paused = false;
+      sessionStartTime = Date.now();
+
+      document.getElementById('pauseBtn').style.display = 'block';
+      document.getElementById('resumeBtn').style.display = 'none';
+
+      beep(660, 0.15, 1);
+      timerInterval = setInterval(runTimerTick, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      // Save partial session if at least 1 hold was done
+      if (currentRowIdx >= 2) {
+        saveSession(buildSessionEntry(false));
+      }
+      paused = false;
+      resetUI();
+      generate();
+      renderHistory();
+    }
+
+    function finishTimer(completed) {
+      saveSession(buildSessionEntry(true));
+      document.getElementById('timerDisplay').classList.remove('active');
+      document.getElementById('timerDone').style.display = 'block';
+      paused = false;
+      resetUI();
+      renderTable(tableRows.length);
+      renderHistory();
+    }
+
+    function resetUI() {
+      document.getElementById('startBtn').style.display = 'block';
+      document.getElementById('genBtn').style.display = 'block';
+      document.getElementById('stopBtn').style.display = 'none';
+      document.getElementById('pauseBtn').style.display = 'none';
+      document.getElementById('resumeBtn').style.display = 'none';
+      document.getElementById('settings').style.display = 'block';
+      document.getElementById('historySection').style.display = 'block';
+      if (!timerInterval) {
+        document.getElementById('timerDisplay').classList.remove('active');
+      }
+    }
+
+    // --- Breathing exercises ---
+    const breathePatterns = [
+      { name: 'Box Breathing', desc: 'Equal inhale, hold, exhale, hold. Used by Navy SEALs for calm focus.', phases: [{label:'Inhale',cls:'inhale',sec:4},{label:'Hold',cls:'hold-in',sec:4},{label:'Exhale',cls:'exhale',sec:4},{label:'Hold',cls:'hold-out',sec:4}] },
+      { name: 'Relaxing Breath (4-7-8)', desc: 'Deep relaxation technique by Dr. Andrew Weil.', phases: [{label:'Inhale',cls:'inhale',sec:4},{label:'Hold',cls:'hold-in',sec:7},{label:'Exhale',cls:'exhale',sec:8}] },
+      { name: 'Triangle Breathing', desc: 'Simple 3-phase pattern for beginners.', phases: [{label:'Inhale',cls:'inhale',sec:4},{label:'Hold',cls:'hold-in',sec:4},{label:'Exhale',cls:'exhale',sec:4}] },
+      { name: 'Energizing Breath (2-2)', desc: 'Quick rhythmic breathing to increase alertness.', phases: [{label:'Inhale',cls:'inhale',sec:2},{label:'Exhale',cls:'exhale',sec:2}] },
+      { name: 'Deep Calm (5-5)', desc: 'Slow, deep breathing for parasympathetic activation.', phases: [{label:'Inhale',cls:'inhale',sec:5},{label:'Exhale',cls:'exhale',sec:5}] },
+    ];
+    let selectedPattern = 0;
+    let breatheInterval = null;
+    let breathePhaseIdx = 0;
+    let breatheRemaining = 0;
+    let breatheCurrentRound = 0;
+    let breatheTotalRounds = 5;
+
+    function renderBreathePresets() {
+      const container = document.getElementById('breathePresets');
+      container.innerHTML = breathePatterns.map((p, i) => {
+        const patternStr = p.phases.map(ph => ph.label + ' ' + ph.sec + 's').join(' — ');
+        return `<button class="breathe-preset${i === selectedPattern ? ' selected' : ''}" onclick="selectPattern(${i})">
+          <div class="breathe-preset-name">${p.name}</div>
+          <div class="breathe-preset-desc">${p.desc}</div>
+          <div class="breathe-preset-pattern">${patternStr}</div>
+        </button>`;
+      }).join('');
+    }
+
+    function selectPattern(i) {
+      if (breatheInterval) return;
+      selectedPattern = i;
+      renderBreathePresets();
+    }
+
+    function updateBreatheVisual() {
+      const pattern = breathePatterns[selectedPattern];
+      const phase = pattern.phases[breathePhaseIdx];
+      const circle = document.getElementById('breatheCircle');
+      const text = document.getElementById('breathePhaseText');
+      const countdown = document.getElementById('breatheCountdown');
+      const round = document.getElementById('breatheRound');
+
+      circle.className = 'breathe-circle ' + phase.cls;
+      text.textContent = phase.label;
+      countdown.textContent = breatheRemaining;
+      round.textContent = `Round ${breatheCurrentRound + 1} / ${breatheTotalRounds}`;
+    }
+
+    function startBreathe() {
+      if (breatheInterval) return;
+      breatheTotalRounds = parseInt(document.getElementById('breatheRounds').value) || 5;
+      breatheCurrentRound = 0;
+      breathePhaseIdx = 0;
+      breatheRemaining = breathePatterns[selectedPattern].phases[0].sec;
+
+      document.getElementById('breatheStartBtn').style.display = 'none';
+      document.getElementById('breatheStopBtn').style.display = 'block';
+      document.getElementById('breatheVisual').classList.add('active');
+      document.querySelector('.breathe-settings').style.display = 'none';
+      document.getElementById('breathePresets').style.display = 'none';
+      document.getElementById('historySection').style.display = 'none';
+
+      beep(660, 0.15, 1);
+      updateBreatheVisual();
+
+      breatheInterval = setInterval(() => {
+        breatheRemaining--;
+        if (breatheRemaining <= 0) {
+          breathePhaseIdx++;
+          const pattern = breathePatterns[selectedPattern];
+          if (breathePhaseIdx >= pattern.phases.length) {
+            breathePhaseIdx = 0;
+            breatheCurrentRound++;
+            if (breatheCurrentRound >= breatheTotalRounds) {
+              clearInterval(breatheInterval);
+              breatheInterval = null;
+              beep(880, 0.2, 3);
+              stopBreathe();
+              return;
+            }
+          }
+          breatheRemaining = pattern.phases[breathePhaseIdx].sec;
+          beep(520, 0.1, 1);
+        }
+        updateBreatheVisual();
+      }, 1000);
+    }
+
+    function stopBreathe() {
+      if (breatheInterval) {
+        clearInterval(breatheInterval);
+        breatheInterval = null;
+      }
+      document.getElementById('breatheStartBtn').style.display = 'block';
+      document.getElementById('breatheStopBtn').style.display = 'none';
+      document.getElementById('breatheVisual').classList.remove('active');
+      document.querySelector('.breathe-settings').style.display = 'block';
+      document.getElementById('breathePresets').style.display = 'flex';
+      document.getElementById('historySection').style.display = 'block';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code !== 'Space') return;
+      if (e.target.tagName === 'INPUT') return;
+      e.preventDefault();
+
+      if (mode === 'test') {
+        if (testInterval) stopTest();
+        else startTest();
+      } else if (mode === 'breathe') {
+        if (breatheInterval) stopBreathe();
+        else startBreathe();
+      } else {
+        if (timerInterval) pauseTimer();
+        else if (paused) resumeTimer();
+        else startTimer();
+      }
+    });
+
+    updateLabels();
+    generate();
+    renderHistory();
+    renderTestHistory();
+    renderBreathePresets();
+  </script>
+</body>
+</html>
