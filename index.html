@@ -27,22 +27,31 @@
     .tabs {
       display: flex;
       justify-content: center;
-      flex-wrap: wrap;
-      gap: 0.4rem;
+      gap: 0.5rem;
       margin-bottom: 2rem;
-      padding: 0 0.25rem;
     }
     .tab-btn {
-      padding: 0.5rem 1rem;
+      padding: 0.6rem 2rem;
       border: 2px solid #334155;
       background: transparent;
       color: #94a3b8;
-      font-size: 0.85rem;
+      font-size: 1rem;
       font-weight: 600;
       border-radius: 8px;
       cursor: pointer;
       transition: all 0.2s;
       white-space: nowrap;
+    }
+    @media (max-width: 540px) {
+      .tabs {
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        padding: 0 0.25rem;
+      }
+      .tab-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+      }
     }
     .tab-btn.active {
       border-color: #38bdf8;
@@ -1440,11 +1449,16 @@
 
     // --- PWA Install ---
     let deferredPrompt = null;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
 
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      document.getElementById('installBanner').classList.add('show');
+      if (!isStandalone && isMobile) {
+        document.getElementById('installBanner').classList.add('show');
+      }
     });
 
     function installApp() {
@@ -1465,14 +1479,12 @@
       deferredPrompt = null;
     });
 
-    // Show iOS-specific hint if not installed
-    if (navigator.standalone === false || (window.matchMedia && window.matchMedia('(display-mode: browser)').matches && /iPhone|iPad/.test(navigator.userAgent))) {
+    // iOS Safari: no beforeinstallprompt, show share hint instead
+    if (isIOS && !isStandalone && !deferredPrompt) {
       const banner = document.getElementById('installBanner');
-      if (!deferredPrompt && !navigator.standalone) {
-        banner.querySelector('p').textContent = 'Tap Share then "Add to Home Screen" to install';
-        banner.querySelector('.install-btn').style.display = 'none';
-        banner.classList.add('show');
-      }
+      banner.querySelector('p').innerHTML = 'To install, tap <strong>Share</strong> &#x2934; then <strong>"Add to Home Screen"</strong>';
+      banner.querySelector('.install-btn').style.display = 'none';
+      banner.classList.add('show');
     }
 
     if ('serviceWorker' in navigator) {
