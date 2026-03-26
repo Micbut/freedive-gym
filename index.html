@@ -652,7 +652,7 @@
 
     /* Install footer */
     .install-footer {
-      display: none;
+      display: block;
       text-align: center;
       padding: 1.5rem 1rem;
       margin-top: 1.5rem;
@@ -660,7 +660,7 @@
       margin-left: auto;
       margin-right: auto;
     }
-    .install-footer.show { display: block; }
+    .install-footer.hidden { display: none; }
     .install-footer-link {
       background: rgba(56, 189, 248, 0.1);
       border: 1px solid #38bdf8;
@@ -1526,30 +1526,20 @@
 
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-    if (!isStandalone) {
-      footer.classList.add('show');
-
-      if (isIOS) {
-        footerBtn.style.display = 'none';
-        footerHint.innerHTML = '&#x2913; Install as app: tap <strong>Share</strong> then <strong>Add to Home Screen</strong>';
-      } else {
-        // Show hint by default, upgrade to button if beforeinstallprompt fires
-        footerBtn.style.display = 'none';
-        footerHint.innerHTML = isMobile
-          ? '&#x2913; Install as app: open your <strong>browser menu</strong> and tap <strong>Install</strong> or <strong>Add to Home Screen</strong>'
-          : '&#x2913; Install as desktop app: open your <strong>browser menu</strong> and select <strong>Install Freedive Gym</strong>';
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-          e.preventDefault();
-          deferredPrompt = e;
-          footerBtn.innerHTML = isMobile
-            ? '<span>&#x2913;</span> Install App'
-            : '<span>&#x2913;</span> Install Desktop App';
-          footerBtn.style.display = '';
-          footerHint.style.display = 'none';
-        });
-      }
+    // Hide install footer if already running as installed app
+    if (isStandalone) {
+      footer.classList.add('hidden');
     }
+
+    // Chromium: enable the install button when available
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      footerBtn.innerHTML = isMobile
+        ? '&#x2913; Install App'
+        : '&#x2913; Install Desktop App';
+      footerBtn.style.display = '';
+    });
 
     function installApp() {
       if (!deferredPrompt) return;
@@ -1561,7 +1551,7 @@
     }
 
     window.addEventListener('appinstalled', () => {
-      footer.classList.remove('show');
+      footer.classList.add('hidden');
       deferredPrompt = null;
     });
 
@@ -1576,9 +1566,11 @@
 
   <div class="install-footer" id="installFooter">
     <button class="install-footer-link" id="installFooterBtn" onclick="installApp()">
-      <span>&#x2913;</span> Install Freedive Gym
+      &#x2913; Install Freedive Gym
     </button>
-    <div class="install-footer-hint" id="installFooterHint"></div>
+    <div class="install-footer-hint" id="installFooterHint">
+      Or use your browser menu to install as an app
+    </div>
   </div>
 </body>
 </html>
