@@ -31,7 +31,6 @@
       gap: 1rem;
       max-width: 520px;
       margin: 0 auto;
-      min-height: calc(100vh - 8rem);
       justify-content: center;
     }
     .home-btn {
@@ -1518,10 +1517,20 @@
     const footerHint = document.getElementById('installFooterHint');
 
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    const isMacSafari = !isIOS && /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
 
     if (!isStandalone) {
-      // Chromium browsers (desktop + Android) — listen for install prompt
+      // Show footer immediately with fallback text
+      footerBtn.style.display = 'none';
+      if (isIOS) {
+        footerHint.innerHTML = 'Install as app: tap <strong>Share</strong> then <strong>Add to Home Screen</strong>';
+      } else if (isMobile) {
+        footerHint.innerHTML = 'Install as app from your browser menu';
+      } else {
+        footerHint.innerHTML = 'Install as desktop app from your browser menu';
+      }
+      footer.classList.add('show');
+
+      // Chromium: upgrade to a clickable install button when available
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
@@ -1530,33 +1539,7 @@
           : '<span>&#x2913;</span> Install Desktop App';
         footerBtn.style.display = '';
         footerHint.innerHTML = '';
-        footer.classList.add('show');
       });
-
-      // iOS Safari
-      if (isIOS) {
-        footerBtn.style.display = 'none';
-        footerHint.innerHTML = 'Install as app: tap <strong>Share</strong> &#x2934; then <strong>Add to Home Screen</strong>';
-        footer.classList.add('show');
-      }
-
-      // macOS Safari — no beforeinstallprompt support
-      if (isMacSafari) {
-        footerBtn.style.display = 'none';
-        footerHint.innerHTML = 'Install as app: menu <strong>File</strong> &#x2192; <strong>Add to Dock</strong>';
-        footer.classList.add('show');
-      }
-
-      // Fallback: if no beforeinstallprompt after 3s on desktop Chrome/Edge, show hint
-      if (!isIOS && !isMacSafari) {
-        setTimeout(() => {
-          if (!deferredPrompt && !isStandalone) {
-            footerBtn.style.display = 'none';
-            footerHint.innerHTML = 'Install as desktop app: click <strong>&#x22EE;</strong> menu &#x2192; <strong>Install Freedive Gym</strong>';
-            footer.classList.add('show');
-          }
-        }, 3000);
-      }
     }
 
     function installApp() {
