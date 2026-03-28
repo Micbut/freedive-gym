@@ -701,6 +701,47 @@
       border-color: #facc15;
     }
     .donate-link span { margin-right: 0.4rem; }
+
+    /* Update banner */
+    .update-banner {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #1e293b;
+      border-top: 2px solid #38bdf8;
+      padding: 1rem 1.2rem;
+      text-align: center;
+      z-index: 9999;
+      animation: slideUp 0.3s ease;
+    }
+    .update-banner.show { display: block; }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .update-banner p {
+      color: #e2e8f0;
+      font-size: 0.95rem;
+      margin-bottom: 0.75rem;
+    }
+    .update-banner button {
+      background: #38bdf8;
+      color: #0f172a;
+      border: none;
+      padding: 0.5rem 1.5rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin: 0 0.3rem;
+    }
+    .update-banner .dismiss-btn {
+      background: transparent;
+      color: #94a3b8;
+      border: 1px solid #334155;
+    }
   </style>
 </head>
 <body>
@@ -1571,11 +1612,43 @@
     });
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
-      // Force update any waiting service worker
-      navigator.serviceWorker.ready.then(reg => {
-        reg.update();
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
       });
+
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+        .then(reg => {
+          // Check for updates immediately and every 60 seconds
+          reg.update();
+          setInterval(() => reg.update(), 60000);
+
+          const showUpdateBanner = () => {
+            document.getElementById('updateBanner').classList.add('show');
+          };
+
+          if (reg.waiting) {
+            showUpdateBanner();
+          }
+
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                showUpdateBanner();
+              }
+            });
+          });
+
+          window.applyUpdate = () => {
+            if (reg.waiting) {
+              reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+          };
+        });
     }
   </script>
 
@@ -1595,5 +1668,11 @@
       document.getElementById('installFooter').style.display = 'none';
     }
   </script>
+
+  <div class="update-banner" id="updateBanner">
+    <p>A new version of Freedive Gym is available!</p>
+    <button onclick="applyUpdate()">Update now</button>
+    <button class="dismiss-btn" onclick="document.getElementById('updateBanner').classList.remove('show')">Later</button>
+  </div>
 </body>
 </html>

@@ -1,13 +1,18 @@
-const CACHE = 'freedive-gym-v14';
+const CACHE = 'freedive-gym-v15';
 const ASSETS = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
-  self.skipWaiting();
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.map(k => caches.delete(k)))
     ).then(() => caches.open(CACHE).then(c => c.addAll(ASSETS)))
   );
+});
+
+self.addEventListener('message', e => {
+  if (e.data && e.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('activate', e => {
