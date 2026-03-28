@@ -826,6 +826,15 @@
       </div>
 
       <div class="form-group">
+        <label id="recoveryLabel">Recovery time</label>
+        <div class="time-input">
+          <input type="number" id="recoveryMin" value="2" min="0" max="30"> <span>min</span>
+          <input type="number" id="recoverySec" value="0" min="0" max="59"> <span>sec</span>
+        </div>
+        <div id="recoveryHint" style="font-size:0.75rem;color:#64748b;margin-top:0.3rem;"></div>
+      </div>
+
+      <div class="form-group">
         <label>Number of sets</label>
         <input type="number" id="sets" value="8" min="1" max="20">
       </div>
@@ -1188,6 +1197,7 @@
         renderBreathePresets();
       } else {
         prefillMaxHold();
+        setDefaultRecovery();
         updateLabels();
         generate();
       }
@@ -1233,10 +1243,28 @@
 
     function updateLabels() {
       const desc = document.getElementById('desc');
+      const hint = document.getElementById('recoveryHint');
       if (mode === 'co2') {
         desc.innerHTML = '<span class="badge badge-apnea">Apnea</span><span class="badge badge-fixed">fixed</span> <span class="badge badge-rest">Rest</span><span class="badge badge-change">decreases</span><br>Trains your tolerance to rising CO2 by shortening recovery between holds.';
+        document.getElementById('recoveryLabel').textContent = 'Starting recovery';
+        hint.textContent = 'Default: same as hold time, decreases each set';
       } else {
         desc.innerHTML = '<span class="badge badge-rest">Rest</span><span class="badge badge-fixed">fixed</span> <span class="badge badge-apnea">Apnea</span><span class="badge badge-change">increases</span><br>Trains your tolerance to low O2 by progressively lengthening holds with full recovery.';
+        document.getElementById('recoveryLabel').textContent = 'Recovery time (fixed)';
+        hint.textContent = 'Default: 2:00 — same rest between every set';
+      }
+    }
+
+    function setDefaultRecovery() {
+      const maxHold = (parseInt(document.getElementById('maxHoldMin').value) || 0) * 60 + (parseInt(document.getElementById('maxHoldSec').value) || 0);
+      const pct = parseInt(document.getElementById('pctSlider').value) / 100;
+      if (mode === 'co2') {
+        const hold = Math.round(maxHold * pct);
+        document.getElementById('recoveryMin').value = Math.floor(hold / 60);
+        document.getElementById('recoverySec').value = hold % 60;
+      } else {
+        document.getElementById('recoveryMin').value = 2;
+        document.getElementById('recoverySec').value = 0;
       }
     }
 
@@ -1252,25 +1280,24 @@
       const maxHold = (parseInt(document.getElementById('maxHoldMin').value) || 0) * 60 + (parseInt(document.getElementById('maxHoldSec').value) || 0);
       const pct = parseInt(document.getElementById('pctSlider').value) / 100;
       const targetHold = Math.round(maxHold * pct);
+      const recovery = (parseInt(document.getElementById('recoveryMin').value) || 0) * 60 + (parseInt(document.getElementById('recoverySec').value) || 0);
 
       let rows = [];
       if (mode === 'co2') {
-        // CO2: fixed hold at target%, rest starts at target hold duration and decreases by 15s
-        const restStart = targetHold;
-        const restDecrease = Math.round(restStart / (sets + 1));
+        // CO2: fixed hold at target%, rest starts at recovery and decreases each set
+        const restDecrease = Math.round(recovery / (sets + 1));
         for (let i = 0; i < sets; i++) {
-          const rest = Math.max(restDecrease, restStart - restDecrease * i);
+          const rest = Math.max(restDecrease, recovery - restDecrease * i);
           rows.push({ type: 'rest', duration: rest, set: i + 1 });
           rows.push({ type: 'apnea', duration: targetHold, set: i + 1 });
         }
       } else {
-        // O2: fixed rest at 2 min, hold increases from 40% of max up to target%
-        const restFixed = 120;
+        // O2: fixed rest at recovery, hold increases from 40% of max up to target%
         const holdStart = Math.round(maxHold * 0.4);
         const holdStep = sets > 1 ? (targetHold - holdStart) / (sets - 1) : 0;
         for (let i = 0; i < sets; i++) {
           const apnea = Math.round(holdStart + holdStep * i);
-          rows.push({ type: 'rest', duration: restFixed, set: i + 1 });
+          rows.push({ type: 'rest', duration: recovery, set: i + 1 });
           rows.push({ type: 'apnea', duration: apnea, set: i + 1 });
         }
       }
