@@ -815,32 +815,23 @@
 
     <div id="settings">
       <div class="form-group">
+        <label>Your max breath hold</label>
+        <div class="time-input">
+          <input type="number" id="maxHoldMin" value="2" min="0" max="30"> <span>min</span>
+          <input type="number" id="maxHoldSec" value="0" min="0" max="59"> <span>sec</span>
+        </div>
+        <div id="maxHoldHint" style="font-size:0.75rem;color:#64748b;margin-top:0.3rem;"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Training intensity: <strong id="pctDisplay">50%</strong></label>
+        <input type="range" id="pctSlider" min="30" max="85" value="50" step="5"
+               style="width:100%;accent-color:#38bdf8;" oninput="onPctChange()">
+      </div>
+
+      <div class="form-group">
         <label>Number of sets</label>
         <input type="number" id="sets" value="8" min="1" max="20">
-      </div>
-
-      <div class="form-group">
-        <label id="restLabel">Starting rest</label>
-        <div class="time-input">
-          <input type="number" id="restMin" value="2" min="0" max="30"> <span>min</span>
-          <input type="number" id="restSec" value="0" min="0" max="59"> <span>sec</span>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label id="apneaLabel">Apnea hold</label>
-        <div class="time-input">
-          <input type="number" id="apneaMin" value="2" min="0" max="30"> <span>min</span>
-          <input type="number" id="apneaSec" value="0" min="0" max="59"> <span>sec</span>
-        </div>
-      </div>
-
-      <div class="form-group" id="changeGroup">
-        <label id="changeLabel">Rest decrease per set</label>
-        <div class="time-input">
-          <input type="number" id="changeMin" value="0" min="0" max="10"> <span>min</span>
-          <input type="number" id="changeSec" value="15" min="0" max="59"> <span>sec</span>
-        </div>
       </div>
     </div>
 
@@ -1200,6 +1191,7 @@
       } else if (isBreathe) {
         renderBreathePresets();
       } else {
+        prefillMaxHold();
         updateLabels();
         generate();
       }
@@ -1220,19 +1212,35 @@
     // Keep switchTab for backwards compat
     function switchTab(m) { goTo(m); }
 
+    function onPctChange() {
+      document.getElementById('pctDisplay').textContent = document.getElementById('pctSlider').value + '%';
+      generate();
+    }
+
+    function getBestHold() {
+      const tests = getTestHistory();
+      if (tests.length === 0) return 0;
+      return Math.max(...tests.map(t => t.seconds));
+    }
+
+    function prefillMaxHold() {
+      const best = getBestHold();
+      const hint = document.getElementById('maxHoldHint');
+      if (best > 0) {
+        document.getElementById('maxHoldMin').value = Math.floor(best / 60);
+        document.getElementById('maxHoldSec').value = Math.round(best % 60);
+        hint.textContent = 'Auto-filled from your best static apnea test (' + fmt(Math.round(best)) + ')';
+      } else {
+        hint.textContent = 'Do a Static Apnea test to auto-fill this';
+      }
+    }
+
     function updateLabels() {
       const desc = document.getElementById('desc');
-      const changeLabel = document.getElementById('changeLabel');
       if (mode === 'co2') {
         desc.innerHTML = '<span class="badge badge-apnea">Apnea</span><span class="badge badge-fixed">fixed</span> <span class="badge badge-rest">Rest</span><span class="badge badge-change">decreases</span><br>Trains your tolerance to rising CO2 by shortening recovery between holds.';
-        changeLabel.textContent = 'Rest decrease per set';
-        document.getElementById('restLabel').textContent = 'Starting rest';
-        document.getElementById('apneaLabel').textContent = 'Apnea hold (fixed)';
       } else {
         desc.innerHTML = '<span class="badge badge-rest">Rest</span><span class="badge badge-fixed">fixed</span> <span class="badge badge-apnea">Apnea</span><span class="badge badge-change">increases</span><br>Trains your tolerance to low O2 by progressively lengthening holds with full recovery.';
-        changeLabel.textContent = 'Apnea increase per set';
-        document.getElementById('restLabel').textContent = 'Rest (fixed)';
-        document.getElementById('apneaLabel').textContent = 'Starting apnea hold';
       }
     }
 
@@ -1245,22 +1253,30 @@
 
     function buildRows() {
       const sets = parseInt(document.getElementById('sets').value) || 8;
-      const restBase = (parseInt(document.getElementById('restMin').value) || 0) * 60 + (parseInt(document.getElementById('restSec').value) || 0);
-      const apneaBase = (parseInt(document.getElementById('apneaMin').value) || 0) * 60 + (parseInt(document.getElementById('apneaSec').value) || 0);
-      const change = (parseInt(document.getElementById('changeMin').value) || 0) * 60 + (parseInt(document.getElementById('changeSec').value) || 0);
+      const maxHold = (parseInt(document.getElementById('maxHoldMin').value) || 0) * 60 + (parseInt(document.getElementById('maxHoldSec').value) || 0);
+      const pct = parseInt(document.getElementById('pctSlider').value) / 100;
+      const targetHold = Math.round(maxHold * pct);
 
       let rows = [];
-      for (let i = 0; i < sets; i++) {
-        let rest, apnea;
-        if (mode === 'co2') {
-          rest = Math.max(0, restBase - change * i);
-          apnea = apneaBase;
-        } else {
-          rest = restBase;
-          apnea = apneaBase + change * i;
+      if (mode === 'co2') {
+        // CO2: fixed hold at target%, rest starts at target hold duration and decreases by 15s
+        const restStart = targetHold;
+        const restDecrease = Math.round(restStart / (sets + 1));
+        for (let i = 0; i < sets; i++) {
+          const rest = Math.max(restDecrease, restStart - restDecrease * i);
+          rows.push({ type: 'rest', duration: rest, set: i + 1 });
+          rows.push({ type: 'apnea', duration: targetHold, set: i + 1 });
         }
-        rows.push({ type: 'rest', duration: rest, set: i + 1 });
-        rows.push({ type: 'apnea', duration: apnea, set: i + 1 });
+      } else {
+        // O2: fixed rest at 2 min, hold increases from 40% of max up to target%
+        const restFixed = 120;
+        const holdStart = Math.round(maxHold * 0.4);
+        const holdStep = sets > 1 ? (targetHold - holdStart) / (sets - 1) : 0;
+        for (let i = 0; i < sets; i++) {
+          const apnea = Math.round(holdStart + holdStep * i);
+          rows.push({ type: 'rest', duration: restFixed, set: i + 1 });
+          rows.push({ type: 'apnea', duration: apnea, set: i + 1 });
+        }
       }
       return rows;
     }
