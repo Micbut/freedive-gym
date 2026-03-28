@@ -137,7 +137,7 @@
       padding: 0.5rem 0.7rem;
       border-radius: 6px;
       font-size: 1rem;
-      width: 100%;
+      width: 80px;
       outline: none;
       transition: border-color 0.2s;
     }
@@ -214,15 +214,11 @@
       font-size: 1rem;
       border-bottom: 1px solid #1e293b;
     }
-    tr.rest td { color: #4ade80; }
-    tr.apnea td { color: #f87171; }
+    td.rest-cell { color: #4ade80; }
+    td.apnea-cell { color: #f87171; }
     tr.done td { opacity: 0.35; }
-    tr.active-row td {
-      font-weight: 700;
-      font-size: 1.1rem;
-    }
-    tr.active-row.rest td { background: rgba(74, 222, 128, 0.1); }
-    tr.active-row.apnea td { background: rgba(248, 113, 113, 0.1); }
+    tr.active-row td { font-weight: 700; font-size: 1.1rem; }
+    tr.active-row td.active-phase { background: rgba(56, 189, 248, 0.12); }
     .total {
       text-align: center;
       margin-top: 1rem;
@@ -1283,18 +1279,27 @@
 
     function renderTable(activeIdx) {
       let totalTime = 0;
-      let html = '<table><thead><tr><th>#</th><th>Phase</th><th>Duration</th></tr></thead><tbody>';
-      for (let i = 0; i < tableRows.length; i++) {
-        const r = tableRows[i];
-        totalTime += r.duration;
-        let cls = r.type;
+      let html = '<table><thead><tr><th>Set</th><th>Breathe</th><th>Hold</th></tr></thead><tbody>';
+      for (let i = 0; i < tableRows.length; i += 2) {
+        const restRow = tableRows[i];
+        const apneaRow = tableRows[i + 1];
+        totalTime += restRow.duration + apneaRow.duration;
+
+        let trCls = '';
+        let restCls = 'rest-cell';
+        let apneaCls = 'apnea-cell';
         if (activeIdx !== undefined) {
-          if (i < activeIdx) cls += ' done';
-          if (i === activeIdx) cls += ' active-row';
+          if (i + 1 < activeIdx) trCls = 'done';
+          else if (i === activeIdx || i + 1 === activeIdx) {
+            trCls = 'active-row';
+            if (i === activeIdx) restCls += ' active-phase';
+            else apneaCls += ' active-phase';
+          }
         }
-        const label = r.type === 'rest' ? 'Breathe' : 'Hold';
-        const durText = (activeIdx !== undefined && i === activeIdx) ? fmt(remaining) : fmt(r.duration);
-        html += `<tr class="${cls}" id="row-${i}"><td>${i + 1}</td><td>${label}</td><td>${durText}</td></tr>`;
+
+        const restText = (activeIdx === i) ? fmt(remaining) : fmt(restRow.duration);
+        const apneaText = (activeIdx === i + 1) ? fmt(remaining) : fmt(apneaRow.duration);
+        html += `<tr class="${trCls}" id="row-${i}"><td>${restRow.set}</td><td class="${restCls}">${restText}</td><td class="${apneaCls}">${apneaText}</td></tr>`;
       }
       html += '</tbody></table>';
       html += `<div class="total">Total time: <strong>${fmt(totalTime)}</strong></div>`;
