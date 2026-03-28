@@ -1,0 +1,40 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-config-schema/schema.json",
+  "productName": "Freedive Gym",
+  "version": "1.0.1",
+  "identifier": "com.freedivegym.desktop",
+  "build": {
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "Freedive Gym",
+        "width": 480,
+        "height": 800,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/icon.png"
+    ],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE2QTEyMUE0REIxQjc4MjcKUldRbmVCdmJwQ0docHMwZWQvdEtLY0tqK0VWaGdVUVU4S05QbWVFMys0QW9JbktFNVlwTHk1TEQK",
+      "endpoints": [
+        "https://github.com/Micbut/freedive-gym/releases/latest/download/latest.json"
+      ]
+    }
+  }
+}

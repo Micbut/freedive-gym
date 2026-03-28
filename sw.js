@@ -1,4 +1,4 @@
-const CACHE = 'freedive-gym-v19';
+const CACHE = 'freedive-gym-v20';
 const ASSETS = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {

@@ -9,6 +9,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <title>Freedive Gym</title>
+  <!-- update test v19 -->
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -1714,6 +1715,27 @@
       || window.matchMedia('(display-mode: minimal-ui)').matches
       || navigator.standalone === true) {
       document.getElementById('installFooter').style.display = 'none';
+    }
+
+    // Tauri desktop updater
+    if (window.__TAURI_INTERNALS__) {
+      (async function checkTauriUpdate() {
+        try {
+          const { check } = window.__TAURI__.updater;
+          const update = await check();
+          if (update) {
+            document.getElementById('updateBanner').classList.add('show');
+            window.applyUpdate = async () => {
+              document.querySelector('#updateBanner button').textContent = 'Downloading...';
+              await update.downloadAndInstall();
+              const { relaunch } = window.__TAURI__.process;
+              await relaunch();
+            };
+          }
+        } catch (e) {
+          console.log('Updater check failed:', e);
+        }
+      })();
     }
   </script>
 
